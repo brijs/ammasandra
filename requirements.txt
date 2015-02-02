@@ -22,6 +22,7 @@ Jinja2==2.7.3
 kombu==3.0.24
 Mako==0.8.1
 MarkupSafe==0.23
+newrelic==2.42.0.35
 oauthlib==0.7.2
 pexpect==2.4
 piston-mini-client==0.7.5
