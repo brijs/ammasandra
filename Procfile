@@ -1,1 +1,1 @@
-web: gunicorn --pythonpath server app:app --log-file -
+web: newrelic-admin run-program gunicorn --pythonpath server app:app --log-file -
