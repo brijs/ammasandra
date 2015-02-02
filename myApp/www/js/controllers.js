@@ -1,48 +1,62 @@
-angular.module('starter.controllers', [])
+angular.module('starter.controllers', ['starter.services'])
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout) {
-  // Form data for the login modal
-  $scope.loginData = {};
-
-  // Create the login modal that we will use later
-  $ionicModal.fromTemplateUrl('templates/login.html', {
-    scope: $scope
-  }).then(function(modal) {
-    $scope.modal = modal;
-  });
-
-  // Triggered in the login modal to close it
-  $scope.closeLogin = function() {
-    $scope.modal.hide();
-  };
-
-  // Open the login modal
-  $scope.login = function() {
-    $scope.modal.show();
-  };
-
-  // Perform the login action when the user submits the login form
-  $scope.doLogin = function() {
-    console.log('Doing login', $scope.loginData);
-
-    // Simulate a login delay. Remove this and replace with your login
-    // code if using a login system
-    $timeout(function() {
-      $scope.closeLogin();
-    }, 1000);
-  };
+.controller('AppCtrl', function($scope, $auth) {
+  
 })
 
-.controller('PlaylistsCtrl', function($scope) {
-  $scope.playlists = [
-    { title: 'Reggae', id: 1 },
-    { title: 'Chill', id: 2 },
-    { title: 'Dubstep', id: 3 },
-    { title: 'Indie', id: 4 },
-    { title: 'Rap', id: 5 },
-    { title: 'Cowbell', id: 6 }
-  ];
+
+.controller('ProfileCtrl', function($scope, $alert, $auth, Account) {
+  $scope.logout = function() {
+    $auth.logout();
+    $scope.isAuthenticated = $auth.isAuthenticated();
+    $scope.getProfile();
+  };
+
+
+  $scope.getProfile = function() {
+    Account.getProfile()
+      .success(function(data) {
+        $scope.user = data;
+        $scope.jwtToken = $auth.getToken() + " Decoded: " 
+        + JSON.stringify($auth.getPayload(), null, '\t');
+        $scope.rawUser = JSON.stringify(data, null, '\t');
+      })
+      .error(function(error) {
+        $alert({
+          content: error.messgae,
+          animation: 'fadeZoomFadeDown',
+          type: 'material',
+          duration: 3
+        });
+      });
+  };
+
+  $scope.authenticate = function(provider) {
+    $auth.authenticate(provider)
+    .then(function() {
+      $scope.isAuthenticated = $auth.isAuthenticated();
+      $scope.getProfile();
+      $alert({
+        content: 'You have successfully logged in',
+        animation: 'fadeZoomFadeDown',
+        type: 'material',
+        duration: 3
+      });
+    })
+    .catch(function(response) {
+      $alert({
+        content: response.data ? response.data.message : response,
+        animation: 'fadeZoomFadeDown',
+        type: 'material',
+        duration: 3
+      });
+    });
+  };
+
+  $scope.isAuthenticated = $auth.isAuthenticated();
+  $scope.getProfile();
 })
 
-.controller('PlaylistCtrl', function($scope, $stateParams) {
-});
+;
+
+
