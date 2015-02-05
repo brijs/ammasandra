@@ -1,0 +1,21 @@
+//create the game
+curl -i -H "Content-Type: application/json" -X POST http://localhost:5000/game
+
+curl -i -X POST http://localhost:5000/
+
+//see the details of the game // just for testing the first game id will always be 51 // should have a component with questions
+curl -i http://localhost:5000/game/51
+
+// test the answers with various options
+// if answer is correct then score should get updated
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"answer":"rome"}' http://localhost:5000/game/51/questions/0
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"answer":"mumbai"}' http://localhost:5000/game/51/questions/0
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"answer":"paris"}' http://localhost:5000/game/51/questions/0
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"answer":"london"}' http://localhost:5000/game/51/questions/0
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"answer":"new york city"}' http://localhost:5000/game/51/questions/0
+
