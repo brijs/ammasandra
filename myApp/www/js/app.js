@@ -41,6 +41,15 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services',
   //   }
   // })
 
+  .state('app.home', {
+    url: "/home",
+    views: {
+      'menuContent': {
+        templateUrl: "templates/home.html"
+      }
+    }
+  })
+
   .state('app.profile', {
     url: "/profile",
     views: {
@@ -71,7 +80,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services',
 
 ;
   // if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/app/profile');
+  $urlRouterProvider.otherwise('/app/home');
 
   $authProvider.facebook({
     clientId: '1234'
