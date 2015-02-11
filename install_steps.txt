@@ -5,10 +5,10 @@ Steps to run locally
 3. Install dependencies for server. Use the following commands.
 	0. cd server
 	1. virtualenv venv1
-	2. pip install -r requirements.txt --allow-all-external
-	# above will install all required python dependencies in as sub-foloder call venv1
-	3. source venv1/bin/activate
+	2. source venv1/bin/activate
 	# above will switch your environment to the above virtual environment (for your current shell)
+	3. pip install -r requirements.txt --allow-all-external
+	# above will install all required python dependencies in as sub-foloder call venv1
 4. in the root dir, create a .env file
 	(will send contents separately - this file contains secret keys)
 5. in root dir, run server
