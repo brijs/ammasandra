@@ -5,7 +5,7 @@
 // the 2nd parameter is an array of 'requires'
 // 'starter.controllers' is found in controllers.js
 angular.module('starter', ['ionic', 'starter.controllers', 'starter.services',
-  'mgcrea.ngStrap', 'satellizer'])
+  'mgcrea.ngStrap', 'satellizer', 'monospaced.elastic', 'ngMaterial'])
 
 .run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
@@ -21,6 +21,15 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services',
   });
 })
 
+// // ============================== angular material ==============================
+// .config( function($mdThemingProvider){
+//   // Configure a dark theme with primary foreground yellow
+//   $mdThemingProvider.theme('docs-dark', 'default')
+//       .primaryPalette('yellow')
+//       .dark();
+// })
+
+// =================================== states ===================================
 .config(function($stateProvider, $urlRouterProvider, $authProvider) {
   $stateProvider
 
@@ -74,6 +83,16 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services',
     views: {
       'menuContent': {
         templateUrl: "templates/categories.html"
+      }
+    }
+  })
+
+  .state('app.restapi', {
+    url: "/restapi",
+    views: {
+      'menuContent': {
+        templateUrl: "templates/restapi.html",
+        controller: 'RestAPICtrl'
       }
     }
   })

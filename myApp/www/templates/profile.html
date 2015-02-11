@@ -45,9 +45,11 @@
 
     <div class="item item-body">
     	<h3>JWT Token, generated in response to <b> POST /auth/google</b>:</h3>
-    	{{jwtToken}}
-    	<h3>Raw JSON response to <b>GET /api/users/me</b>: </h3>
-    	{{rawUser}}
+    	<pre>{{jwtToken}}</pre>
+      <h4>Decoded JWT Token</h4>
+      <pre>{{decodedJwtToken}}</pre>
+    	<h3>Raw JSON response to <b>GET /api/v1/users/me</b>: </h3>
+    	<pre>{{rawUser}}</pre>
     </div>
     <button class="button button-block button-assertive" ng-click="logout()">
   		Log Out

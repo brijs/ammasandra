@@ -1,0 +1,59 @@
+<ion-view view-title="REST API playground">
+
+  <ion-content>
+
+  	<md-content class="buttondemoBasicUsage">
+  		<md-card>
+  		<h2>Request</h2>
+  		<form name="userForm" class="buttondemoBasicUsage">
+  		      
+        <md-input-container flex>
+          <label>API end point</label>
+          <input ng-model="api.url" placeholder="">
+        </md-input-container>
+        
+      
+	  	<md-input-container flex>
+          <label>HTTP Method (GET or POST)</label>
+          <input ng-model="api.httpMethod" placeholder=""required>
+        </md-input-container>
+
+	  	<md-input-container flex>
+          <label>Request Query String (name=value&amp;name=value)</label>
+          <input ng-model="api.queryString" placeholder="">
+        </md-input-container>        
+
+	  	<md-input-container flex>
+          <label>POST Data (name=value&amp;name=value)</label>
+          <input ng-model="api.postData" placeholder="">
+        </md-input-container>  
+
+        <md-input-container flex>
+          <label>Authorization: Bearer (header)</label>
+	  		<textArea  msd-elastic ng-model=jwtToken></textArea>
+	  	</md-input-container>
+
+	  	
+	  	<section layout="row" layout-sm="column" layout-align="center center">
+	      <md-button ng-click="submit()" class="md-raised md-primary">  Submit  </md-button>
+
+	       <md-button ng-click="reset()" class="md-raised md-warn">  Reset  </md-button>
+    	  </section>
+    	 </form>
+  	</md-card>
+  	
+  	<!-- <md-divider ></md-divider> -->
+  	
+  	<md-card>
+    
+  		<h2>Response</h2>
+  		<pre>Status: {{api.status}}</pre>
+	  	<pre>Data: {{api.response}}</pre>
+	  	  
+    </md-card>
+    </md-content>
+
+  </ion-content>
+
+
+</ion-view>

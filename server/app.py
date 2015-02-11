@@ -87,12 +87,13 @@ def create_token(user):
 
 
 def parse_token(req):
-	if req.headers.get('Authorization'):
-		token = req.headers.get('Authorization').split()[1]
-	else:
-		token = req.args.get('token')
-
-	return jwt.decode(token, app.config['TOKEN_SECRET'])
+    # prefer token parameter over auth header (for testing)
+    if req.args.get('token'):
+        token = req.args.get('token')
+    else:
+        token = req.headers.get('Authorization').split()[1]
+    
+    return jwt.decode(token, app.config['TOKEN_SECRET'])
 
 
 
@@ -311,6 +312,9 @@ def facebook():
 
 
 # =========================== main: DEV testing only ===========================
+app.debug = True
+app.config['DEBUG'] = True
+
 if __name__ == '__main__':
 	# ctx = SSL.Context(SSL.SSLv23_METHOD)
 	# ctx.use_privatekey_file('/home/brij/certs/ssl.key')
