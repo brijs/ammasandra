@@ -71,6 +71,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.api.url = "/api/v1/users/me";
     $scope.api.httpMethod = "GET";
     $scope.api.queryString = "";
+    $scope.api.postData = "";
     $scope.api.status = 200;
     $scope.api.response = "N/A";
     $scope.jwtToken =  $auth.getToken();
