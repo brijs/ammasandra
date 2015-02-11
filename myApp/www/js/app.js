@@ -51,15 +51,23 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services',
     }
   })
 
-  .state('app.newgame', {
-    url: "/newgame",
+  .state('app.question', {
+    url: "/question",
     views: {
       'menuContent': {
-        templateUrl: "templates/newgame.html"
+        templateUrl: "templates/question.html"
       }
     }
   })
 
+  .state('app.categories', {
+    url: "/categories",
+    views: {
+      'menuContent': {
+        templateUrl: "templates/categories.html"
+      }
+    }
+  })
 
 ;
   // if none of the above states are matched, use this as the fallback

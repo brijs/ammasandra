@@ -12,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from requests_oauthlib import OAuth1
 from jwt import DecodeError, ExpiredSignature
 from OpenSSL import SSL
+import random, sys
 
 # configuration
 current_path = os.path.dirname(__file__)
@@ -23,7 +24,8 @@ app.config.from_object('config')
 # db
 db = SQLAlchemy(app)
 
-# db Models
+# ================================== DB Model ==================================
+# TODO: Models can be moved out of app.py to separate file(s)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True)
@@ -72,6 +74,7 @@ class User(db.Model):
 db.create_all()
 
 
+# =================================== Utils ===================================
 # JWT token
 def create_token(user):
     payload = {
@@ -121,24 +124,145 @@ def login_required(f):
 
 
 
-# Routes (client-side html/js)
-
+# ======================= Routes 0: client-side html/js =======================
+# 
+# These assets (index.html + dependent scripts, css etc) would eventually be 
+# deployed as part of the client-side package (eg: apk). For now, serving
+# these up from our app server.
 @app.route('/')
 def index():
 	return send_file('../myApp/www/index.html')
 
 
-# Routes (REST API)
+# ============================= Routes 1: REST API =============================
+# 
+# As a convention, all "API" endpoints start with /api/<version>/...
 
-@app.route('/api/users/me')
+# sau's globals: should get this from the database
+currentGameId = 50
+numOfQuestionsInAGame = 2
+numOfOptionsPerQuestion = 3
+questionSeeds = {
+        'cities': [ 'mumbai', 'paris', 'new york city', 'rome', ' london' ],
+        'fruits': [ 'apple', 'pear', 'grape', 'orange', 'banana', 'strawberry' ]
+    }
+
+games = {}
+
+imageSearchURL='https://www.googleapis.com/customsearch/v1?key=AIzaSyCeiMGAnozDLIOKhSYCG5lIHbWDjRT6cVg&cx=007408032665432303252:eybewyws4ca'
+    
+
+@app.route('/api/v1/game', methods=['POST', 'GET']) #brij added 'GET' to test easily from browser directly
 @login_required
-def me():
+def createGame():
+    #if not request.json:
+    #    abort(400)
+    # need to change randint to sample and have an iteration for each seed
+    global currentGameId
+    global games
+    questions = []
+    currentSeedLocations = random.sample(range(0,len(questionSeeds['cities'])-1),numOfQuestionsInAGame)
+    print currentSeedLocations
+    print currentGameId
+    for questionId in range(0, len(currentSeedLocations)):
+        print questionId
+        currentSeedLocation = currentSeedLocations[questionId]
+        currentSeed = questionSeeds['cities'][currentSeedLocation]
+        allOptions = questionSeeds['cities'][:]
+        allOptions.remove(currentSeed)
+        options = random.sample( allOptions, numOfOptionsPerQuestion )
+        options.append(currentSeed)
+        random.shuffle(options)
+        print(options)
+        queryParams = {
+            'q': currentSeed,
+            'searchType': 'image'
+            }
+        response = requests.get(imageSearchURL, params=queryParams)
+        # probably need to add error handling here
+        #print(response.text)
+        jsonResponse = json.loads( response.text )
+        #print jsonResponse
+        #TODO: need to scramble the link so that the answer is not obvious
+        imageLink = jsonResponse['items'][0]['link']
+        print imageLink
+        question = {
+            'questionId': questionId,
+            'questionKey': currentSeedLocation,
+            'options': options,
+            'imageLink': imageLink
+            }
+        print question
+        questions.append(question)
+        
+    print questions
+    print currentGameId
+    currentGameId = currentGameId + 1
+    print currentGameId
+    games[currentGameId]= {}
+    print games[currentGameId]
+    games[currentGameId]['questions']= questions
+    user = User.query.filter_by(id=g.user_id).first()
+    games[currentGameId]['userId']= user.email
+    games[currentGameId]['nextQuestionId']= questions[0]['questionId']
+    games[currentGameId]['score']= 0
+    
+    return jsonify( { 'gameID': currentGameId } ), 201
+
+
+@app.route('/api/v1/game/<gameId>', methods=['GET'])
+@login_required
+def getGameDetails(gameId):
+    # need to filter the things we don't want to send back
+    return jsonify( games[int(gameId)] )
+
+
+@app.route('/api/v1/game/<gameId>/questions/<questionId>', methods=['POST'])
+@login_required
+def checkAnswer(gameId, questionId):
+    print 'check answer for gameId: ' + gameId + ' and questionId: ' + questionId
+    print request
+    if not request.json or not 'answer' in request.json:
+        abort(400)
+    # validate that the questionid is the expected next questionid
+    if ( int(questionId) != games[int(gameId)]['nextQuestionId']) or ( int(questionId) == -1 ):
+        print 'invalid questionId. Expected: ' + games[int(gameId)]['nextQuestionId'] + ' but got ' + questionId
+        abort(400)
+    if ( request.json['answer'] == questionSeeds['cities'][games[int(gameId)]['questions'][int(questionId)]['questionKey']] ):
+        print 'correct answer ' + request.json['answer']
+        games[int(gameId)]['score'] += 100
+        if ( games[int(gameId)]['nextQuestionId'] < (numOfQuestionsInAGame -1) ):
+            games[int(gameId)]['nextQuestionId'] += 1
+        else:
+            games[int(gameId)]['nextQuestionId']= -1
+        response = True
+    else:
+        print games[int(gameId)]['questions'][int(questionId)]['questionKey']
+        print games[int(gameId)]['questions'][int(questionId)]
+        print questionSeeds['cities']
+        print 'correct answer was ' + questionSeeds['cities'][games[int(gameId)]['questions'][int(questionId)]['questionKey']]+ '. Submitted answer was ' + request.json['answer'] 
+        response = False
+
+    return jsonify( { 'result': response } ), 201    
+ 
+
+# @app.route('/api/v1/users/<userId>', methods=['GET'])
+@app.route('/api/v1/users/me', methods=['GET'])
+@login_required
+def getUserDetails():
     user = User.query.filter_by(id=g.user_id).first()
     return jsonify(user.to_json())
 
 
-# Routes (auth)
 
+# =========================== Routes 2: Auth related ===========================
+# 
+# The following endpoints implement OAuth for various providers (google,
+# facebook etc). In particular, these http POSTs include a "code", 
+# which is then passed along to the corresponding providers in exchange
+# for "access_tokens" (& optionally "refresh_tokens"). These access_tokens
+# are then used with the specific provider APIs (eg: google plus API) to
+# request information (eg: profile pic) on behalf of the end-user.
 @app.route('/auth/google', methods=['POST'])
 def google():
     access_token_url = 'https://accounts.google.com/o/oauth2/token'
@@ -153,7 +277,12 @@ def google():
     # Step 1. Exchange authorization code for access token.
     r = requests.post(access_token_url, data=payload)
     token = json.loads(r.text)
-    headers = {'Authorization': 'Bearer {0}'.format(token['access_token'])}
+    try:
+        headers = {'Authorization': 'Bearer {0}'.format(token['access_token'])}
+    except KeyError:
+        response = jsonify(message='Google Authentication failed: ' + token['error'])
+        response.status_code = 401
+        return response
 
     # Step 2. Retrieve information about the current user.
     r = requests.get(people_api_url, headers=headers)
@@ -172,10 +301,19 @@ def google():
     token = create_token(u)
     return jsonify(token=token)
 
+# TODO: implement facebook
+def facebook():
+    response = jsonify(message='Not Implemented.')
+    response.status_code = 401
+    return response
 
+
+
+
+# =========================== main: DEV testing only ===========================
 if __name__ == '__main__':
 	# ctx = SSL.Context(SSL.SSLv23_METHOD)
 	# ctx.use_privatekey_file('/home/brij/certs/ssl.key')
 	# ctx.use_certificate_file('/home/brij/certs/ssl.cert')
 	# app.run(host='0.0.0.0', ssl_context=ctx, port=3001)
-    app.run(host='0.0.0.0', port=3001)
+    app.run(host='0.0.0.0', port=8000, debug=True)
