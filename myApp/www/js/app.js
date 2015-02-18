@@ -107,6 +107,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services',
 
   $authProvider.google({
     clientId: '182163907923-a21l1knn1qefjfoasl2t0c2mbv62ca24.apps.googleusercontent.com'
+    // scope: ['profile','email', 'https://www.googleapis.com/auth/cse']
   });
 
   $authProvider.github({

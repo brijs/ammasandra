@@ -9,8 +9,10 @@ Steps to run locally
 	# above will switch your environment to the above virtual environment (for your current shell)
 	3. pip install -r requirements.txt --allow-all-external
 	# above will install all required python dependencies in as sub-foloder call venv1
-4. in the root dir, create a .env file
+4a. in the root dir, create a .env file
 	(will send contents separately - this file contains secret keys)
+4b. save Ammasandra*.pl2 in the root dir
+	(will send file separately - this is Google API private key file)
 5. in root dir, run server
 	foreman start 
 	# runs server: localhost:5000

@@ -14,6 +14,12 @@ from jwt import DecodeError, ExpiredSignature
 from OpenSSL import SSL
 import random, sys
 
+from httplib2 import Http
+from oauth2client.client import SignedJwtAssertionCredentials
+from apiclient.discovery import build
+import pprint
+
+
 # configuration
 current_path = os.path.dirname(__file__)
 client_path = os.path.abspath(os.path.join(current_path, '..', 'myApp', 'www'))
@@ -34,6 +40,8 @@ class User(db.Model):
     facebook = db.Column(db.String(120))
     github = db.Column(db.String(120))
     google = db.Column(db.String(120))
+    google_access_token = db.Column(db.String(300))
+    google_refresh_token = db.Column(db.String(300))
     linkedin = db.Column(db.String(120))
     twitter = db.Column(db.String(120))
 
@@ -41,7 +49,8 @@ class User(db.Model):
     
     def __init__(self, email=None, password=None, display_name=None,
                  facebook=None, github=None, google=None, linkedin=None,
-                 twitter=None, display_pic=None):
+                 twitter=None, display_pic=None, google_access_token=None,
+                 google_refresh_token=None):
         if email:
             self.email = email.lower()
         if password:
@@ -52,6 +61,10 @@ class User(db.Model):
             self.facebook = facebook
         if google:
             self.google = google
+        if google_access_token:
+            self.google_access_token = google_access_token
+        if google_refresh_token:
+            self.google_refresh_token = google_refresh_token
         if linkedin:
             self.linkedin = linkedin
         if twitter:
@@ -69,7 +82,10 @@ class User(db.Model):
         return dict(id=self.id, email=self.email, displayName=self.display_name,
                     facebook=self.facebook, google=self.google,
                     linkedin=self.linkedin, twitter=self.twitter,
-                    displayPic=self.display_pic)
+                    displayPic=self.display_pic,
+                    google_access_token=self.google_access_token,
+                    google_refresh_token=self.google_refresh_token)
+
 
 db.create_all()
 
@@ -124,6 +140,29 @@ def login_required(f):
     return decorated_function
 
 
+# =========================== Google API using OAuth ===========================
+def getGoogleImageSearchResults(query):
+    GoogleCustomSearch = None
+    
+    client_email = app.config['GOOGLE_CUSTOM_SEARCH_CLIENT_ID']
+    with open(app.config['GOOGLE_CUSTOM_SEARCH_PK_FILE']) as f:
+        private_key = f.read()
+    
+    credentials = SignedJwtAssertionCredentials(client_email, private_key,
+        'https://www.googleapis.com/auth/cse')
+
+    http = Http()
+    credentials.authorize(http)
+
+    GoogleCustomSearch = build('customsearch', 'v1', http=http)
+    response = GoogleCustomSearch.cse().list(q=query, 
+        cx=app.config['GOOGLE_CUSTOM_SEARCH_ENGINE_ID'],
+        searchType= 'image',
+        imgSize="large",
+        num=3,
+        fields="items(image/thumbnailLink,link)").execute()
+    return response
+
 
 # ======================= Routes 0: client-side html/js =======================
 # 
@@ -153,7 +192,7 @@ games = {}
 imageSearchURL='https://www.googleapis.com/customsearch/v1?key=AIzaSyCeiMGAnozDLIOKhSYCG5lIHbWDjRT6cVg&cx=007408032665432303252:eybewyws4ca'
     
 
-@app.route('/api/v1/game', methods=['POST', 'GET']) #brij added 'GET' to test easily from browser directly
+@app.route('/api/v1/game', methods=['POST']) #brij added 'GET' to test easily from browser directly
 @login_required
 def createGame():
     #if not request.json:
@@ -179,29 +218,30 @@ def createGame():
             'q': currentSeed,
             'searchType': 'image'
             }
-        response = requests.get(imageSearchURL, params=queryParams)
+        # response = requests.get(imageSearchURL, params=queryParams)
         # probably need to add error handling here
         #print(response.text)
-        jsonResponse = json.loads( response.text )
+        # jsonResponse = json.loads( response.text )
+        jsonResponse = getGoogleImageSearchResults(currentSeed)
         #print jsonResponse
         #TODO: need to scramble the link so that the answer is not obvious
         imageLink = jsonResponse['items'][0]['link']
-        print imageLink
+        # print imageLink
         question = {
             'questionId': questionId,
             'questionKey': currentSeedLocation,
             'options': options,
             'imageLink': imageLink
             }
-        print question
+        # print question
         questions.append(question)
         
-    print questions
-    print currentGameId
+    # print questions
+    # print currentGameId
     currentGameId = currentGameId + 1
-    print currentGameId
+    # print currentGameId
     games[currentGameId]= {}
-    print games[currentGameId]
+    # print games[currentGameId]
     games[currentGameId]['questions']= questions
     user = User.query.filter_by(id=g.user_id).first()
     games[currentGameId]['userId']= user.email
@@ -296,7 +336,8 @@ def google():
     u = User(google=profile['sub'],
              display_name=profile['name'],
              display_pic=profile['picture'],
-             email=profile['email'])
+             email=profile['email'],
+             google_access_token=token['access_token'])
     db.session.add(u)
     db.session.commit()
     token = create_token(u)
@@ -307,7 +348,6 @@ def facebook():
     response = jsonify(message='Not Implemented.')
     response.status_code = 401
     return response
-
 
 
 

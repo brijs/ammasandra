@@ -1,2 +1,4 @@
 # .env files has secret keys & ids that are used during DEV testing
 .env
+*.p12
+setup_env.ksh
